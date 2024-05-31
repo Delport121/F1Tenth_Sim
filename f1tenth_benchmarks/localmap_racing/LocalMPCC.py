@@ -135,7 +135,6 @@ class LocalMPCC(BasePlanner):
         np.save(self.mpcc_data_path + f"States_{self.step_counter}.npy", states)
         np.save(self.mpcc_data_path + f"Controls_{self.step_counter}.npy", controls)
         
-
         return action 
 
     def generate_constraints_and_parameters(self, x0_in, x0_speed):

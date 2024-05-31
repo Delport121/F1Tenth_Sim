@@ -32,7 +32,7 @@ def local_opt_min_curv(reftrack: np.ndarray,
 
     Please refer to our paper for further information:
     Heilmeier, Wischnewski, Hermansdorfer, Betz, Lienkamp, Lohmann
-    Minimum Curvature Trajectory Planning and Control for an Autonomous Racecar
+        
     DOI: 10.1080/00423114.2019.1631455
 
     Hint: CVXOPT can be used as a solver instead of quadprog by uncommenting the import and corresponding code section.

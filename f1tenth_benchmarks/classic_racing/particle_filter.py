@@ -50,7 +50,7 @@ class ParticleFilter:
         return estimate
 
     def particle_control_update(self, control, vehicle_speed):
-        next_states = particle_dynamics_update(self.proposal_distribution, control, vehicle_speed, self.dt, self.params.wheelbase)
+        next_states = particle_dynamics_update(self.proposal_distribution, control, vehicle_speed, self.dt, self.params.wheelbase) #next_states(x, y, theta)
         random_samples = np.random.multivariate_normal(np.zeros(3), self.Q, self.NP)
         self.particles = next_states + random_samples
 

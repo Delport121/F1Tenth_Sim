@@ -40,9 +40,6 @@ def test_full_stack_mpcc():
     plot_trajectory_analysis(planner.name, test_id)
 
 
-
-
-
 if __name__ == "__main__":
     test_constant_mpcc_planning()
     test_mpcc_planning()

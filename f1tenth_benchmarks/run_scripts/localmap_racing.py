@@ -32,10 +32,6 @@ def test_localmap_mpcc():
 
     plot_trajectory_analysis(planner.name, test_id)
 
-
-
-
-
 if __name__ == "__main__":
     # localmap_pp_centre()
     # test_localmap_pp()

@@ -29,7 +29,7 @@ class LocalMapGenerator:
 
     def generate_line_local_map(self, scan):
         z = scan[:, None] * self.z_transform
-        self.extract_track_boundaries(z)
+        #self.extract_track_boundaries(z)
         left_line, right_line = self.extract_track_boundaries(z)
         left_boundary, right_boundary = self.calculate_visible_segments(left_line, right_line)
         left_extension, right_extension = self.estimate_semi_visible_segments(left_line, right_line, left_boundary, right_boundary)
