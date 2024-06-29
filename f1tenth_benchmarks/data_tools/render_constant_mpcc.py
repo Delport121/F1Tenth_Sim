@@ -129,6 +129,7 @@ if __name__ == '__main__':
     # render_mpcc_plans("ConstantMPCC", "mu70", "aut")
     # render_local_maps("LocalMPCC2", "r1", "aut")
     # render_local_maps("FullStackMPCC3", "m3u70", "aut")
+    # render_local_maps("LocalMPCC", "mu60", "")
 
 
 

@@ -16,6 +16,8 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
         scans = np.load(root + f"RawData_{test_id}/ScanLog_{map_name}_0.npy")
     except:
         Logs, scans = None, None
+       
+        
     ensure_path_exists(root + f"Images_{test_id}")
     save_path = root + f"Images_{test_id}/LocalMapGeneration_{test_id}/"
     ensure_path_exists(save_path)
@@ -132,8 +134,8 @@ def reoreintate_pts(pts, position, theta):
     return pts
 
 if __name__ == '__main__':
-    render_local_maps("LocalMapPP", "c1")
-    # render_local_maps("LocaleMPCC", "mu60", "aut")
+    # render_local_maps("LocalMapPP", "c1")
+    render_local_maps("LocalMPCC", "mu60", "gbr")
     # render_local_maps("LocalMapPlanner", "r1", "mco")
 
 

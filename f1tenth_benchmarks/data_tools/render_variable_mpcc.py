@@ -30,7 +30,7 @@ def render_mpcc_plans(planner_name, test_id, map_name="aut"):
             continue
         states = np.load(mpcc_data_path + f"States_{i}.npy")
         controls = np.load(mpcc_data_path + f"Controls_{i}.npy")
-        x0 = np.load(mpcc_data_path + f"x0_{i}.npy")
+        x0 = np.load(mpcc_data_path + f"States_{i}.npy")
 
         # fig = plt.figure(1)
         fig = plt.figure(figsize=(15, 10))
@@ -166,13 +166,10 @@ if __name__ == '__main__':
     # render_mpcc_plans("GlobalPlanMPCC", "mu70", "gbr")
     # render_mpcc_plans("GlobalPlanMPCC", "max4_p0", "aut")
     # render_mpcc_plans("GlobalPlanMPCC", "max4", "aut")
-    render_mpcc_plans("FullStackMPCC", "mpcc_t3", "aut")
+    # render_mpcc_plans("FullStackMPCC", "mpcc_t3", "aut")
     # render_mpcc_plans("GlobalPlanMPCC", "max8", "aut")
     # render_mpcc_plans("GlobalPlanMPCC", "mu70", "aut")
     # render_mpcc_plans("ConstantMPCC", "mu70", "aut")
     # render_local_maps("LocalMPCC2", "r1", "aut")
     # render_local_maps("FullStackMPCC3", "m3u70", "aut")
-
-
-
-
+    render_mpcc_plans("LocalMPCC", "mu60", "gbr")

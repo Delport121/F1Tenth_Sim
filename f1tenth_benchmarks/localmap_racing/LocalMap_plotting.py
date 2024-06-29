@@ -1,3 +1,9 @@
+"""
+The following code is used to plot the local map data that is used for mapless racing.
+The algorithm predicts and extends the left and right boundaries of the track from local track data.
+This data is stored in the the logs folder when the simulator is running and can be used to plot the boundaries afterwords.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 import glob
@@ -129,7 +135,7 @@ def plot_all():
 
 
 #------------------------------------------------------------------------------------------------------------------
-#Boundary extension start at 53
+
 n = 53
 
 local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
