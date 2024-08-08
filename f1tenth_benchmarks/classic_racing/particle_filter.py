@@ -4,6 +4,7 @@ from numba import njit
 from PIL import Image
 import os 
 from scipy.ndimage import distance_transform_edt as edt
+import matplotlib.pyplot as plt
 
 from f1tenth_benchmarks.utils.BasePlanner import load_parameter_file_with_extras
 
@@ -28,10 +29,15 @@ class ParticleFilter:
         self.weights = np.ones(self.NP) / self.NP
         self.particle_indices = np.arange(self.NP)
 
+        self
+
     def init_pose(self, init_pose):
+        '''Randomly generate a bunch of particles'''
         self.estimates = [init_pose]
         self.proposal_distribution = init_pose + np.random.multivariate_normal(np.zeros(3), self.Q*self.params.init_distribution, self.NP)
         self.particles = self.proposal_distribution
+        # plt.plot(self.particles[:,0], self.particles[:,1], 'ro')
+        # plt.show()
 
         return init_pose
 
@@ -39,33 +45,66 @@ class ParticleFilter:
         self.map_name = map_name
         self.scan_simulator = SensorModel(f"maps/{map_name}", self.num_beams, self.params.fov)
 
+        image = self.scan_simulator.map_img
+        image_np = np.array(image, dtype=int)
+        image_np[image_np <= 128.] = 0
+        image_np[image_np > 128.] = 1
+        occupancy_grid = image_np
+        # print(image_np)
+        # # Visualize the occupancy grid
+        plt.imshow(occupancy_grid, cmap='gray', interpolation='nearest')
+        plt.title('Occupancy Grid')
+        plt.show()
+
     def localise(self, action, observation):
+        '''MCL algorithm'''
         vehicle_speed = observation["vehicle_speed"] 
         self.particle_control_update(action, vehicle_speed)
-        self.measurement_update(observation["scan"][::24])
+        self.measurement_update(observation["scan"][::24]) # Splice downsmaple particles
 
         estimate = np.dot(self.particles.T, self.weights)
         self.estimates.append(estimate)
 
+        # image = self.scan_simulator.map_img
+        # image_np = np.array(image, dtype=int)
+        # image_np[image_np <= 128.] = 0
+        # image_np[image_np > 128.] = 1
+        # occupancy_grid = image_np
+        # plt.imshow(occupancy_grid, cmap='gray', interpolation='nearest')
+
+        
+        plt.xlim([-2, 10])
+        plt.ylim([-2, 10])
+        plt.plot(self.particles[:,0], self.particles[:,1], 'ro', markersize=0.2)
+        plt.plot(estimate[0], estimate[1], 'yo', markersize=2)
+        plt.title('Occupancy Grid')
+        plt.show()
+
         return estimate
 
     def particle_control_update(self, control, vehicle_speed):
+        '''Add noise to motion model and update particles'''
         next_states = particle_dynamics_update(self.proposal_distribution, control, vehicle_speed, self.dt, self.params.wheelbase) #next_states(x, y, theta)
         random_samples = np.random.multivariate_normal(np.zeros(3), self.Q, self.NP)
         self.particles = next_states + random_samples
 
     def measurement_update(self, measurement):
+        '''Update the weights of the particles based on the measurement'''
+        # Simulate scans for each particle
         particle_measurements = np.zeros((self.NP, self.num_beams))
         for i, state in enumerate(self.particles): 
             particle_measurements[i] = self.scan_simulator.scan(state)
 
+        #Importance sampling 
         z = particle_measurements - measurement
         sigma = np.clip(np.sqrt(np.average(z**2, axis=0)), 0.01, 10)
         weights =  np.exp(-z ** 2 / (2 * sigma ** 2))
         self.weights = np.prod(weights, axis=1)
 
+        # Normalize weights
         self.weights = self.weights / np.sum(self.weights)
 
+        # Resampling
         proposal_indices = np.random.choice(self.particle_indices, self.NP, p=self.weights)
         self.proposal_distribution = self.particles[proposal_indices,:]
 
@@ -77,6 +116,7 @@ class ParticleFilter:
 
 
 def particle_dynamics_update(states, actions, speed, dt, L):
+    '''Motion model: Update the particles using the bicycle model'''
     states[:, 0] += speed * np.cos(states[:, 2]) * dt
     states[:, 1] += speed * np.sin(states[:, 2]) * dt
     states[:, 2] += speed * np.tan(actions[0]) / L * dt
@@ -107,10 +147,12 @@ class SensorModel:
         self.cosines = np.cos(theta_arr)
     
     def load_map(self, map_path):
+        # load map image
         map_img_path = os.path.splitext(map_path)[0] + ".png"
         map_img = np.array(Image.open(map_img_path).transpose(Image.FLIP_TOP_BOTTOM))
         map_img = map_img.astype(np.float64)
 
+         # grayscale -> binary
         map_img[map_img <= 128.] = 0.
         map_img[map_img > 128.] = 255.
         self.map_img = map_img

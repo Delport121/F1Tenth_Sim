@@ -79,7 +79,8 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
 
             # xs = [boundaries[z, 0], boundaries[z, 2]]
             # ys = [boundaries[z, 1], boundaries[z, 3]]
-            plt.plot(xs, ys, '-o', color=sweedish_green, markersize=5)
+            # plt.plot(xs, ys, '-o', color=sweedish_green, markersize=5)
+            
             # plt.plot(xs, ys, '-o', color='black', markersize=5)
         
         if len(boundary_extension) > 0:
@@ -90,9 +91,10 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
             for z in range(boundary_extension.shape[0]):
                 xs = np.array([xss1[z], xss2[z]])
                 ys = np.array([yss1[z], yss2[z]])
-                # xs = [boundary_extension[z, 0], boundary_extension[z, 2]]
-                # ys = [boundary_extension[z, 1], boundary_extension[z, 3]]
+                xs = [boundary_extension[z, 0], boundary_extension[z, 2]]
+                ys = [boundary_extension[z, 1], boundary_extension[z, 3]]
                 plt.plot(xs, ys, '-o', color=fresh_t, markersize=5)
+                
                 # plt.plot(xs, ys, '-o', color='pink', markersize=5)
         else:
             xss1, xss2 = [xs1[0]], [xs2[0]]
@@ -119,8 +121,8 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
             pass
 
         # plt.axis('equal')
-        plt.tight_layout()
-        plt.axis('off')
+        # plt.tight_layout()
+        #plt.axis('off')
         name = save_path + f"LocalMapGeneration_{i}"
         plt.savefig(name + ".svg", bbox_inches="tight")
         # plt.savefig(f"Data/LocalMapRacing/LocalMaps/LocalGeneration_{i}_aut.pdf", bbox_inches="tight", pad_inches=0.05)

@@ -13,8 +13,41 @@ from matplotlib.animation import FuncAnimation
 import matplotlib
 matplotlib.use('TkAgg')  # or another suitable backend like 'Qt5Agg', 'Agg', etc.
 
-#Plot one set
+#Plotting functions
 # ------------------------------------------------------------------------------------------------------------------
+# Custom sort function to sort filenames numerically
+def numerical_sort(value):
+    numbers = re.findall(r'\d+', value)
+    return int(numbers[-1]) if numbers else float('inf')
+
+def close_event(event):
+    if event.key == 'escape':
+        plt.close(event.canvas.figure)
+
+def PrintDataArray(n):
+
+    local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
+    left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
+    right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
+    boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
+    bound_extension = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_"+ str(n) +".npy")
+
+    # Print the arrays
+    print("Local Track Data:")
+    print(local_track)
+
+    print("\nLeft Line Data:")
+    print(left_line)
+
+    print("\nRight Line Data:")
+    print(right_line)
+
+    print("\nBoundaries Data:")
+    print(boundaries)
+
+    print("\nBoundary Extension Data:")
+    print(bound_extension)
+
 def plot_once(n):
     local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
     left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
@@ -44,6 +77,64 @@ def plot_once(n):
 
     fig.canvas.mpl_connect('key_press_event', close_event)
     plt.show()
+
+def PlotAnimation():
+
+    # Load the boundary files
+    boundaries = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_*.npy"), key=numerical_sort)
+    boundaries_ext = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_*.npy"), key=numerical_sort)
+
+    # Preload the data
+    Bound_data = [np.load(file) for file in boundaries]
+    Bound_ext_data = [np.load(file) for file in boundaries_ext]
+
+    # Create the figure and axes
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Plot initial data to set up the plot objects
+    left_line, = ax.plot([], [], 'o-', label='Left bound')
+    right_line, = ax.plot([], [], 'o-', label='Right bound')
+    left_ext, = ax.plot([], [], 'o-', label='Left ext')
+    right_ext, = ax.plot([], [], 'o-', label='Right ext')
+
+    # Set labels, title, legend, and grid
+    ax.set_xlabel('X Coordinate')
+    ax.set_ylabel('Y Coordinate')
+    ax.set_title('Left and Right Line Coordinates Over Time')
+    ax.legend()
+    ax.grid(True)
+
+    # Set fixed axis limits based on initial data range (adjust according to your data range)
+    ax.set_xlim(-10, 17)  # Example limits, adjust according to your data range
+    ax.set_ylim(-10, 10)  # Example limits, adjust according to your data range
+
+    # Define the update function
+    def update(frame):
+        # Update data in plot objects
+        left_x, left_y = Bound_data[frame][:, 0], Bound_data[frame][:, 1]
+        right_x, right_y = Bound_data[frame][:, 2], Bound_data[frame][:, 3]
+
+        # Check if Bound_ext_data[frame] is not empty
+        if Bound_ext_data[frame].size > 0:
+            left_ext_x, left_ext_y = Bound_ext_data[frame][:, 0], Bound_ext_data[frame][:, 1]
+            right_ext_x, right_ext_y = Bound_ext_data[frame][:, 2], Bound_ext_data[frame][:, 3]
+        else:
+            left_ext_x, left_ext_y = [], []
+            right_ext_x, right_ext_y = [], []
+
+        left_line.set_data(left_x, left_y)
+        right_line.set_data(right_x, right_y)
+        left_ext.set_data(left_ext_x, left_ext_y)
+        right_ext.set_data(right_ext_x, right_ext_y)
+
+        # Update the title to indicate the current frame
+        ax.set_title(f'Left and Right Line Coordinates (Frame {frame})')
+
+    # Create the animation
+    ani = FuncAnimation(fig, update, frames=len(Bound_data), repeat=False, interval=200)
+    plt.show()
+
+
 
 def plot_in_sequence():
     # Custom sort function to sort filenames numerically
@@ -131,101 +222,12 @@ def plot_all():
     plt.legend()
     plt.grid(True)
     plt.show()
-
-
-
 #------------------------------------------------------------------------------------------------------------------
 
-n = 53
+def main():
+    PrintDataArray(53)
+    # plot_once(53)
+    PlotAnimation()
 
-local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
-left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
-right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
-boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
-bound_extension = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_"+ str(n) +".npy")
-
-def close_event(event):
-    if event.key == 'escape':
-        plt.close(event.canvas.figure)
-
-# Print the arrays
-print("Local Track Data:")
-print(local_track)
-
-print("\nLeft Line Data:")
-print(left_line)
-
-print("\nRight Line Data:")
-print(right_line)
-
-print("\nBoundaries Data:")
-print(boundaries)
-
-print("\nBoundary Extension Data:")
-print(bound_extension)
-
-# plot_once(13)
-# plot_once(14)
-# plot_once(15)
-# #plot_all()
-# plot_in_sequence()
-
-# Custom sort function to sort filenames numerically
-def numerical_sort(value):
-    numbers = re.findall(r'\d+', value)
-    return int(numbers[-1]) if numbers else float('inf')
-
-# Load the boundary files
-boundaries = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_*.npy"), key=numerical_sort)
-boundaries_ext = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_*.npy"), key=numerical_sort)
-
-# Preload the data
-Bound_data = [np.load(file) for file in boundaries]
-Bound_ext_data = [np.load(file) for file in boundaries_ext]
-
-# Create the figure and axes
-fig, ax = plt.subplots(figsize=(12, 8))
-
-# Plot initial data to set up the plot objects
-left_line, = ax.plot([], [], 'o-', label='Left bound')
-right_line, = ax.plot([], [], 'o-', label='Right bound')
-left_ext, = ax.plot([], [], 'o-', label='Left ext')
-right_ext, = ax.plot([], [], 'o-', label='Right ext')
-
-# Set labels, title, legend, and grid
-ax.set_xlabel('X Coordinate')
-ax.set_ylabel('Y Coordinate')
-ax.set_title('Left and Right Line Coordinates Over Time')
-ax.legend()
-ax.grid(True)
-
-# Set fixed axis limits based on initial data range (adjust according to your data range)
-ax.set_xlim(-10, 17)  # Example limits, adjust according to your data range
-ax.set_ylim(-10, 10)  # Example limits, adjust according to your data range
-
-# Define the update function
-def update(frame):
-    # Update data in plot objects
-    left_x, left_y = Bound_data[frame][:, 0], Bound_data[frame][:, 1]
-    right_x, right_y = Bound_data[frame][:, 2], Bound_data[frame][:, 3]
-
-    # Check if Bound_ext_data[frame] is not empty
-    if Bound_ext_data[frame].size > 0:
-        left_ext_x, left_ext_y = Bound_ext_data[frame][:, 0], Bound_ext_data[frame][:, 1]
-        right_ext_x, right_ext_y = Bound_ext_data[frame][:, 2], Bound_ext_data[frame][:, 3]
-    else:
-        left_ext_x, left_ext_y = [], []
-        right_ext_x, right_ext_y = [], []
-
-    left_line.set_data(left_x, left_y)
-    right_line.set_data(right_x, right_y)
-    left_ext.set_data(left_ext_x, left_ext_y)
-    right_ext.set_data(right_ext_x, right_ext_y)
-
-    # Update the title to indicate the current frame
-    ax.set_title(f'Left and Right Line Coordinates (Frame {frame})')
-
-# Create the animation
-ani = FuncAnimation(fig, update, frames=len(Bound_data), repeat=False, interval=100)
-
-plt.show()
+if __name__ == '__main__':
+     main()

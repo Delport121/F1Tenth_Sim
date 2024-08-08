@@ -104,7 +104,7 @@ class MapData:
     
 
 def main():
-    map_name = "esp"
+    map_name = "aut"
 
     map_data = MapData(map_name)
     map_data.plot_map_img()
