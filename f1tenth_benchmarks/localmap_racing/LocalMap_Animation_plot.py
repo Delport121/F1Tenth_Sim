@@ -11,6 +11,7 @@ import os
 import re
 from matplotlib.animation import FuncAnimation
 import matplotlib
+import math
 matplotlib.use('TkAgg')  # or another suitable backend like 'Qt5Agg', 'Agg', etc.
 
 #Plotting functions
@@ -27,8 +28,8 @@ def close_event(event):
 def PrintDataArray(n):
 
     local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
-    left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
-    right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
+    right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
+    left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
     boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
     bound_extension = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_"+ str(n) +".npy")
 
@@ -50,8 +51,8 @@ def PrintDataArray(n):
 
 def plot_once(n):
     local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
-    left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
-    right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
+    right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
+    left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
     boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
     bound_extension = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_"+ str(n) +".npy")
 
@@ -92,10 +93,10 @@ def PlotAnimation():
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Plot initial data to set up the plot objects
-    left_line, = ax.plot([], [], 'o-', label='Left bound')
-    right_line, = ax.plot([], [], 'o-', label='Right bound')
-    left_ext, = ax.plot([], [], 'o-', label='Left ext')
-    right_ext, = ax.plot([], [], 'o-', label='Right ext')
+    left_line, = ax.plot([], [], 'o-', label='Right bound')
+    right_line, = ax.plot([], [], 'o-', label='Left bound')
+    left_ext, = ax.plot([], [], 'o-', label='Right ext')
+    right_ext, = ax.plot([], [], 'o-', label='Left ext')
 
     # Set labels, title, legend, and grid
     ax.set_xlabel('X Coordinate')
@@ -185,49 +186,135 @@ def plot_in_sequence():
 
     plt.show()
 
-def plot_all():
-    
-     # Custom sort function to sort filenames numerically
-    def numerical_sort(value):
-        numbers = re.findall(r'\d+', value)
-        return int(numbers[-1]) if numbers else float('inf')
-
-    # Get a list of all left and right line files
-    left_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_*.npy"), key=numerical_sort)
-    right_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_*.npy"), key=numerical_sort)
-    track_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_*.npy"), key=numerical_sort)
-
-    # Plot the lines continuously
-    plt.figure(figsize=(12, 8))
-
-    for left_file, right_file in zip(left_files, right_files):
-        # Load the numpy arrays
-        left_line = np.load(left_file)
-        right_line = np.load(right_file)
-        #local_track = np.load(track_files)
-
-        # Extract x and y coordinates
-        left_x, left_y = left_line[:, 0], left_line[:, 1]
-        right_x, right_y = right_line[:, 0], right_line[:, 1]
-        #local_track_x, local_track_y = local_track[:, 0], local_track[:, 1]
-
-        # Plot the coordinates
-        plt.plot(left_x, left_y, label=f'Left Line ({os.path.basename(left_file)})', marker='o')
-        plt.plot(right_x, right_y, label=f'Right Line ({os.path.basename(right_file)})', marker='o')
-        #plt.plot(local_track_x, local_track_y, label=f'Local Track ({os.path.basename(track_files)})', marker='o')
-
-    plt.xlabel('X Coordinate')
-    plt.ylabel('Y Coordinate')
-    plt.title('Left and Right Line Coordinates Over Time')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
 #------------------------------------------------------------------------------------------------------------------
 
+class FeatureExtraction:
+    def __init__(self, path):
+        #self.radii = np.array([])
+        #self.centers = np.array([])
+        self.radii = []
+        self.centers = []
+        
+    def getCurvature(self):
+        pass
+
+    def calculate_circle_radius_and_center(points):
+        if len(points) < 3:
+            raise ValueError("At least three points are required to form a circle.")
+        
+        radii = []
+        centers = []
+
+        for i in range(len(points) - 2):
+            x1, y1 = points[i]
+            x2, y2 = points[i + 1]
+            x3, y3 = points[i + 2]
+
+            # Calculate the determinant (related to twice the area of the triangle)
+            A = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)
+            
+            if A == 0:
+                raise ValueError("The points are collinear, so a unique circle cannot be formed.")
+
+            # Calculate the squared lengths of the sides of the triangle
+            a_sq = (x2 - x1) ** 2 + (y2 - y1) ** 2
+            b_sq = (x3 - x2) ** 2 + (y3 - y2) ** 2
+            c_sq = (x1 - x3) ** 2 + (y1 - y3) ** 2
+
+            # Calculate the circumradius using the correct formula
+            a = math.sqrt(a_sq)
+            b = math.sqrt(b_sq)
+            c = math.sqrt(c_sq)
+            
+            # Area of the triangle (using determinant method)
+            area = abs(A) / 2
+
+            # Circumradius
+            radius = (a * b * c) / (4 * area)
+
+            # Calculate the circumcenter coordinates
+            x_center = ((x1**2 + y1**2) * (y2 - y3) + (x2**2 + y2**2) * (y3 - y1) + (x3**2 + y3**2) * (y1 - y2)) / (2 * A)
+            y_center = ((x1**2 + y1**2) * (x3 - x2) + (x2**2 + y2**2) * (x1 - x3) + (x3**2 + y3**2) * (x2 - x1)) / (2 * A)
+
+            radii.append(radius)
+            centers.append((x_center, y_center))
+
+        return np.array(radii), np.array(centers)
+
+def plot_points_and_circles(points, radii, centers):
+    fig, ax = plt.subplots()
+    
+    # Plot the points
+    ax.scatter(points[:, 0], points[:, 1], color='blue', label='Points')
+    
+    # Plot the circles
+    for radius, (x_center, y_center) in zip(radii, centers):
+        circle = plt.Circle((x_center, y_center), radius, color='red', fill=False, label='Circle')
+        ax.add_patch(circle)
+    
+    # Set equal scaling
+    ax.set_aspect('equal', 'box')
+    
+    # Add labels and legend
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.legend()
+    
+    # Show plot
+    plt.show()
+
+def plot_curvature(curvature, points):
+    fig, ax = plt.subplots()
+    
+    # Plot the points
+    ax.scatter(points[:, 0], points[:, 1], color='blue', label='Points')
+    
+    # Plot the curvature
+    ax.plot(curvature, color='red', label='Curvature')
+    
+    # Add labels and legend
+    ax.set_xlabel('Index')
+    ax.set_ylabel('Curvature')
+    ax.legend()
+
+    fig.canvas.mpl_connect('key_press_event', close_event)
+    
+    # Show plot
+    plt.show()
+    
+
+
+
+
 def main():
-    PrintDataArray(53)
+    # PrintDataArray(53)
     # plot_once(53)
     PlotAnimation()
+
+    points = np.array([
+    [-1.13979656, -1.1504081],
+    [-0.88752856, -1.08038959],
+    [-0.64219188, -1.05320218],
+    [-0.38959808, -1.0280293],
+    [-0.13795937, -0.96584606],
+    [0.11108701, -0.96568564]
+    ])
+
+    # n =200
+    n = 400
+    right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
+
+    radii, centers = FeatureExtraction.calculate_circle_radius_and_center(right_line)
+    curvature = 1 / radii
+    #print("Radii:", radii)
+    #print("Centers:", centers)
+    print("Curvature:", len(curvature))
+    print("Right Line:", len(right_line))
+
+    plot_in_sequence()
+    #plot_once(n)
+    #plot_points_and_circles(right_line, radii, centers)
+    # plot_curvature(curvature, right_line)
 
 if __name__ == '__main__':
      main()
