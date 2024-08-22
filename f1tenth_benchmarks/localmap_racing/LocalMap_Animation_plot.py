@@ -12,6 +12,7 @@ import re
 from matplotlib.animation import FuncAnimation
 import matplotlib
 import math
+from trajectory_planning_helpers.calc_head_curv_num import calc_head_curv_num
 matplotlib.use('TkAgg')  # or another suitable backend like 'Qt5Agg', 'Agg', etc.
 
 #Plotting functions
@@ -49,12 +50,26 @@ def PrintDataArray(n):
     print("\nBoundary Extension Data:")
     print(bound_extension)
 
-def plot_once(n):
+def plot_lines_once(n):
     local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
     right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
     left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
     boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
     bound_extension = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_"+ str(n) +".npy")
+
+    try:
+        scan_dir = f"/home/ruan/Documents/f1tenth_benchmarks/Logs/LocalMPCC/RawData_mu60/ScanLog_gbr_0.npy"
+        scans = np.load(scan_dir)
+        print("Scan data found")
+    except:
+        print("No scan data found")
+
+    angles = np.linspace(-2.35619449615, 2.35619449615, 1080)
+    coses = np.cos(angles)
+    sines = np.sin(angles)
+
+    scan_xs, scan_ys = scans[n+1] * np.array([coses, sines])
+
 
     # Extract x and y coordinates
     left_x, left_y = left_line[:, 0], left_line[:, 1]
@@ -65,6 +80,7 @@ def plot_once(n):
     # Plot the coordinates
     ax.plot(left_x, left_y, label=f'Left Line ()', marker='o')
     ax.plot(right_x, right_y, label=f'Right Line ()', marker='o')
+    # ax.plot(scan_xs, scan_ys, label=f'Scan Data', marker='o')
 
     ax.set_xlabel('X Coordinate')
     ax.set_ylabel('Y Coordinate')
@@ -73,13 +89,157 @@ def plot_once(n):
     ax.grid(True)
 
     # Set fixed axis limits based on initial data range (adjust according to your data range)
-    ax.set_xlim([-1, 17])  # Example limits, adjust according to your data range
-    ax.set_ylim([-10, 10])  # Example limits, adjust according to your data range
+    ax.set_xlim([-1, 20])  # Example limits, adjust according to your data range
+    ax.set_ylim([-20, 10])  # Example limits, adjust according to your data range
 
     fig.canvas.mpl_connect('key_press_event', close_event)
     plt.show()
 
-def PlotAnimation():
+def plot_lines_and_curvature(n):
+    local_track = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/local_map_"+ str(n) +".npy")
+    right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
+    left_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_"+ str(n) +".npy")
+    boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
+    bound_extension = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_"+ str(n) +".npy")
+
+    try:
+        scan_dir = f"/home/ruan/Documents/f1tenth_benchmarks/Logs/LocalMPCC/RawData_mu60/ScanLog_gbr_0.npy"
+        scans = np.load(scan_dir)
+        print("Scan data found")
+    except:
+        print("No scan data found")
+
+    angles = np.linspace(-2.35619449615, 2.35619449615, 1080)
+    coses = np.cos(angles)
+    sines = np.sin(angles)
+    
+    # Extract x and y coordinates
+    scan_xs, scan_ys = scans[n+1] * np.array([coses, sines])
+    left_x, left_y = left_line[:, 0], left_line[:, 1]
+    right_x, right_y = right_line[:, 0], right_line[:, 1]
+    
+    # Ca;culate the curvature using cirlce through three points method
+    radiiR, centersR, curvatureR = FeatureExtraction.calculate_circle_radius_and_center(right_line)
+    radiiL, centersL, curvatureL = FeatureExtraction.calculate_circle_radius_and_center(left_line)
+
+    #Calculate the curvature using the calc_head_curv_num function
+    # Calculate element lengths (distances between consecutive points)
+    pathL = np.vstack((left_x, left_y)).T
+    pathR = np.vstack((right_x, right_y)).T
+    el_lengthsL = np.sqrt(np.sum(np.diff(pathL, axis=0)**2, axis=1))
+    el_lengthsR = np.sqrt(np.sum(np.diff(pathR, axis=0)**2, axis=1))
+
+    # Call the calc_head_curv_num function
+    psi, kappaL = calc_head_curv_num(
+        path=pathL,
+        el_lengths=el_lengthsL,
+        is_closed=False,
+        stepsize_psi_preview=0.1,
+        stepsize_psi_review=0.1,
+        stepsize_curv_preview=0.2,
+        stepsize_curv_review=0.2,
+        calc_curv=True
+    )
+    # Call the calc_head_curv_num function
+    psi, kappaR = calc_head_curv_num(
+        path=pathR,
+        el_lengths=el_lengthsR,
+        is_closed=False,
+        stepsize_psi_preview=0.1,
+        stepsize_psi_review=0.1,
+        stepsize_curv_preview=0.2,
+        stepsize_curv_review=0.2,
+        calc_curv=True
+    )
+    
+    # Visualization
+    fig, axs = plt.subplots(3, 1, figsize=(10, 12))
+
+    # Plot the coordinates
+    axs[0].plot(left_x, left_y, label=f'Left Line ()', marker='o')
+    axs[0].plot(right_x, right_y, label=f'Right Line ()', marker='o')
+    # axs[0].plot(scan_xs, scan_ys, label=f'Scan Data', marker='o')
+    axs[0].set_title('Left and Right Line Coordinates Over Time for n = ' + str(n))
+    axs[0].set_xlabel('X Coordinate')
+    axs[0].set_ylabel('Y Coordinate')
+    axs[0].legend()
+    axs[0].grid(True)
+    axs[0].axis('equal')
+
+    # # Plot the heading (psi)
+    # axs[1].plot(np.arange(len(psi)), psi, label='Heading (psi)')
+    # axs[1].set_title('Heading (psi) along the Path')
+    # axs[1].set_xlabel('Point Index')
+    # axs[1].set_ylabel('Heading (radians)')
+    # axs[1].legend()
+    
+    # Plot the curvature using the circle through three points method
+    axs[1].plot(curvatureL, label='Left line Curvature')
+    axs[1].plot(curvatureR, label='Right line Curvature')
+    axs[1].set_title('Curvature using circle through three points method')
+    axs[1].set_xlabel('Index')
+    axs[1].set_ylabel('Curvature')
+    axs[1].legend()
+    axs[1].grid(True)
+    axs[1].set_ylim([-2, 2])
+
+    # Plot the curvature (kappa)
+    axs[2].plot(np.arange(len(kappaL)), kappaL, label='Curvature (kappa) left')
+    axs[2].plot(np.arange(len(kappaR)), kappaR, label='Curvature (kappa) right')
+    axs[2].set_title('Curvature (kappa) along the Path using calc_head_curv_num')
+    axs[2].set_xlabel('Point Index')
+    axs[2].set_ylabel('Curvature (1/m)')
+    axs[2].grid(True)
+    axs[2].legend()
+
+    plt.tight_layout()
+    fig.canvas.mpl_connect('key_press_event', close_event)
+    plt.show()
+    
+    # # Plot the data
+    # fig, [ax,ax1] = plt.subplots(nrows=2)
+    # # fig, (ax, ax1) = plt.subplots(nrows=1, ncols=2)
+
+   
+    # # Plot the coordinates
+    # ax.plot(left_x, left_y, label=f'Left Line ()', marker='o')
+    # ax.plot(right_x, right_y, label=f'Right Line ()', marker='o')
+    # # ax.plot(scan_xs, scan_ys, label=f'Scan Data', marker='o')
+    # ax.set_title('Left and Right Line Coordinates Over Time for n = ' + str(n))
+    # ax.set_xlabel('X Coordinate')
+    # ax.set_ylabel('Y Coordinate')
+    # ax.legend()
+    # ax.grid(True)
+    # ax.axis('equal')
+
+    # # Set fixed axis limits based on initial data range (adjust according to your data range)
+    # # ax.set_xlim([-1, 20])  # Example limits, adjust according to your data range
+    # # ax.set_ylim([-20, 10])  # Example limits, adjust according to your data range
+
+   
+    
+    # # Plot the curvature
+    # ax1.plot(curvatureL, label='Left line Curvature')
+    # ax1.plot(curvatureR, label='Right line Curvature')
+   
+    # ax1.set_ylim([-2, 2])
+
+    # # Add labels and legend
+    # ax1.set_xlabel('Index')
+    # ax1.set_ylabel('Curvature')
+    # ax1.legend()
+    # ax1.set_title('Curvature using circle through three points method')
+    # ax1.grid(True)
+
+    # fig.canvas.mpl_connect('key_press_event', close_event)
+    # plt.show()
+
+def plot_boundaries_once(n):
+    boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
+    bound_extension = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundExtension_"+ str(n) +".npy")
+    pass
+
+def plot_boundaries_animation():
 
     # Load the boundary files
     boundaries = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_*.npy"), key=numerical_sort)
@@ -93,10 +253,10 @@ def PlotAnimation():
     fig, ax = plt.subplots(figsize=(12, 8))
 
     # Plot initial data to set up the plot objects
-    left_line, = ax.plot([], [], 'o-', label='Right bound')
-    right_line, = ax.plot([], [], 'o-', label='Left bound')
-    left_ext, = ax.plot([], [], 'o-', label='Right ext')
-    right_ext, = ax.plot([], [], 'o-', label='Left ext')
+    left_line, = ax.plot([], [], 'o-', label='Left bound')
+    right_line, = ax.plot([], [], 'o-', label='Right bound')
+    left_ext, = ax.plot([], [], 'o-', label='Left ext')
+    right_ext, = ax.plot([], [], 'o-', label='Right ext')
 
     # Set labels, title, legend, and grid
     ax.set_xlabel('X Coordinate')
@@ -112,13 +272,13 @@ def PlotAnimation():
     # Define the update function
     def update(frame):
         # Update data in plot objects
-        left_x, left_y = Bound_data[frame][:, 0], Bound_data[frame][:, 1]
-        right_x, right_y = Bound_data[frame][:, 2], Bound_data[frame][:, 3]
+        right_x, right_y = Bound_data[frame][:, 0], Bound_data[frame][:, 1]
+        left_x, left_y = Bound_data[frame][:, 2], Bound_data[frame][:, 3]
 
         # Check if Bound_ext_data[frame] is not empty
         if Bound_ext_data[frame].size > 0:
-            left_ext_x, left_ext_y = Bound_ext_data[frame][:, 0], Bound_ext_data[frame][:, 1]
-            right_ext_x, right_ext_y = Bound_ext_data[frame][:, 2], Bound_ext_data[frame][:, 3]
+            right_ext_x, right_ext_y = Bound_ext_data[frame][:, 0], Bound_ext_data[frame][:, 1]
+            left_ext_x, left_ext_y = Bound_ext_data[frame][:, 2], Bound_ext_data[frame][:, 3]
         else:
             left_ext_x, left_ext_y = [], []
             right_ext_x, right_ext_y = [], []
@@ -135,17 +295,11 @@ def PlotAnimation():
     ani = FuncAnimation(fig, update, frames=len(Bound_data), repeat=False, interval=200)
     plt.show()
 
-
-
-def plot_in_sequence():
-    # Custom sort function to sort filenames numerically
-    def numerical_sort(value):
-        numbers = re.findall(r'\d+', value)
-        return int(numbers[-1]) if numbers else float('inf')
-
+def plot_lines_animation():
+  
     # Load the boundary files
-    left_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_*.npy"), key=numerical_sort)
-    right_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_*.npy"), key=numerical_sort)
+    right_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_*.npy"), key=numerical_sort)
+    left_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_*.npy"), key=numerical_sort)
 
     # # Preload the data
     left_data = [np.load(file) for file in left_files]
@@ -182,7 +336,52 @@ def plot_in_sequence():
         ax.set_title(f'Left and Right Line Coordinates (Frame {frame})')
 
     # Create the animation
-    ani = FuncAnimation(fig, update, frames=len(left_data), repeat=False, interval=400)
+    ani = FuncAnimation(fig, update, frames=len(left_data), repeat=False, interval=200)
+
+    plt.show()
+
+def plot_points_and_circles_together(n):
+    right_line_data = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_" + str(n) + ".npy")
+    radii, centers, curvature = FeatureExtraction.calculate_circle_radius_and_center(right_line_data)
+
+    right_x, right_y = right_line_data[:, 0], right_line_data[:, 1]
+    print(right_x)
+    print(right_y)
+    
+    # Create the figure and axes
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # Plot initial data to set up the plot objects
+    right_line_plot, = ax.plot([], [], 'o-', label='Right Line')
+
+    # Set labels, title, legend, and grid
+    ax.set_xlabel('X Coordinate')
+    ax.set_ylabel('Y Coordinate')
+    ax.set_title('Right Line Coordinates and Curvature Over Time')
+    ax.legend()
+    ax.grid(True)
+
+    ax.set_xlim(-15, 15)  # Example limits, adjust according to your data range
+    ax.set_ylim(-15, 15)
+    # Set equal scaling
+    # ax.set_aspect('equal', 'box')
+
+    # Define the update function
+    def update(frame):
+        # Update data in plot objects
+        right_line_plot.set_data(right_x, right_y)
+
+        # Update the title to indicate the current frame
+        ax.set_title(f'Right Line Coordinates (Frame {frame})')
+
+        radius, (x_center, y_center) = radii[frame], centers[frame]
+
+        circle = plt.Circle((x_center, y_center), radius, color='red', fill=False, label='Circle')
+        ax.add_patch(circle)
+
+    # Create the animation
+    ani = FuncAnimation(fig, update, frames=len(curvature), repeat=False, interval=200)
+    fig.canvas.mpl_connect('key_press_event', close_event)
 
     plt.show()
 
@@ -197,13 +396,14 @@ class FeatureExtraction:
         
     def getCurvature(self):
         pass
-
+    
     def calculate_circle_radius_and_center(points):
         if len(points) < 3:
             raise ValueError("At least three points are required to form a circle.")
         
         radii = []
         centers = []
+        curvatures = []
 
         for i in range(len(points) - 2):
             x1, y1 = points[i]
@@ -236,10 +436,18 @@ class FeatureExtraction:
             x_center = ((x1**2 + y1**2) * (y2 - y3) + (x2**2 + y2**2) * (y3 - y1) + (x3**2 + y3**2) * (y1 - y2)) / (2 * A)
             y_center = ((x1**2 + y1**2) * (x3 - x2) + (x2**2 + y2**2) * (x1 - x3) + (x3**2 + y3**2) * (x2 - x1)) / (2 * A)
 
+            # Determine the sign of curvature based on the orientation of the triangle
+            # Sign of the area A will determine the direction of the turn:
+            # A > 0: counterclockwise (positive curvature)
+            # A < 0: clockwise (negative curvature)
+            curvature = 1.0 / radius
+            curvature = curvature if A > 0 else -curvature
+
             radii.append(radius)
             centers.append((x_center, y_center))
+            curvatures.append(curvature)
 
-        return np.array(radii), np.array(centers)
+        return np.array(radii), np.array(centers), np.array(curvatures)
 
 def plot_points_and_circles(points, radii, centers):
     fig, ax = plt.subplots()
@@ -283,14 +491,8 @@ def plot_curvature(curvature, points):
     plt.show()
     
 
-
-
-
 def main():
-    # PrintDataArray(53)
-    # plot_once(53)
-    PlotAnimation()
-
+    
     points = np.array([
     [-1.13979656, -1.1504081],
     [-0.88752856, -1.08038959],
@@ -300,21 +502,28 @@ def main():
     [0.11108701, -0.96568564]
     ])
 
-    # n =200
-    n = 400
+    # n = 200
+    # n = 400
+    # n = 85
+    # n = 240
+    # n = 415
+    n = 140
     right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
 
-    radii, centers = FeatureExtraction.calculate_circle_radius_and_center(right_line)
-    curvature = 1 / radii
-    #print("Radii:", radii)
-    #print("Centers:", centers)
-    print("Curvature:", len(curvature))
-    print("Right Line:", len(right_line))
+    radii, centers, curvature = FeatureExtraction.calculate_circle_radius_and_center(right_line)
+    # print("Radii:", radii)
+    # print("Centers:", centers)
+    # print("Curvature:", len(curvature))
+    # print("Right Line:", len(right_line))
 
-    plot_in_sequence()
-    #plot_once(n)
-    #plot_points_and_circles(right_line, radii, centers)
+    # PrintDataArray(n)
+    # plot_lines_once(n)
+    # plot_boundaries_animation()
+    # plot_lines_animation()
+    # plot_points_and_circles(right_line, radii, centers)
     # plot_curvature(curvature, right_line)
+    # plot_points_and_circles_together(n)
+    plot_lines_and_curvature(n)
 
 if __name__ == '__main__':
      main()
