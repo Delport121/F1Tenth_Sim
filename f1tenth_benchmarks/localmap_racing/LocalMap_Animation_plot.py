@@ -196,43 +196,6 @@ def plot_lines_and_curvature(n):
     fig.canvas.mpl_connect('key_press_event', close_event)
     plt.show()
     
-    # # Plot the data
-    # fig, [ax,ax1] = plt.subplots(nrows=2)
-    # # fig, (ax, ax1) = plt.subplots(nrows=1, ncols=2)
-
-   
-    # # Plot the coordinates
-    # ax.plot(left_x, left_y, label=f'Left Line ()', marker='o')
-    # ax.plot(right_x, right_y, label=f'Right Line ()', marker='o')
-    # # ax.plot(scan_xs, scan_ys, label=f'Scan Data', marker='o')
-    # ax.set_title('Left and Right Line Coordinates Over Time for n = ' + str(n))
-    # ax.set_xlabel('X Coordinate')
-    # ax.set_ylabel('Y Coordinate')
-    # ax.legend()
-    # ax.grid(True)
-    # ax.axis('equal')
-
-    # # Set fixed axis limits based on initial data range (adjust according to your data range)
-    # # ax.set_xlim([-1, 20])  # Example limits, adjust according to your data range
-    # # ax.set_ylim([-20, 10])  # Example limits, adjust according to your data range
-
-   
-    
-    # # Plot the curvature
-    # ax1.plot(curvatureL, label='Left line Curvature')
-    # ax1.plot(curvatureR, label='Right line Curvature')
-   
-    # ax1.set_ylim([-2, 2])
-
-    # # Add labels and legend
-    # ax1.set_xlabel('Index')
-    # ax1.set_ylabel('Curvature')
-    # ax1.legend()
-    # ax1.set_title('Curvature using circle through three points method')
-    # ax1.grid(True)
-
-    # fig.canvas.mpl_connect('key_press_event', close_event)
-    # plt.show()
 
 def plot_boundaries_once(n):
     boundaries = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/boundaries_"+ str(n) +".npy")
@@ -339,7 +302,130 @@ def plot_lines_animation():
     ani = FuncAnimation(fig, update, frames=len(left_data), repeat=False, interval=200)
 
     plt.show()
+    
+def plot_lines_and_curvature_animation():
+    
+     # Load the boundary files
+    right_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_*.npy"), key=numerical_sort)
+    left_files = sorted(glob.glob("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line2_*.npy"), key=numerical_sort)
+    try:
+        scan_files = sorted(glob.glob("/home/ruan/Documents/f1tenth_benchmarks/Logs/LocalMPCC/RawData_mu60/ScanLog_gbr_*.npy"), key=numerical_sort)
+        print("Scan data found")
+    except:
+        print("No scan data found")
 
+    angles = np.linspace(-2.35619449615, 2.35619449615, 1080)
+    coses = np.cos(angles)
+    sines = np.sin(angles)
+
+    # # Preload the data
+    left_data = [np.load(file) for file in left_files]
+    right_data = [np.load(file) for file in right_files]
+    scan_data = [np.load(file) for file in scan_files]
+
+    # Create the figure and axes
+    # fig, ax = plt.subplots(figsize=(12, 8))
+    fig, axs = plt.subplots(3, 1, figsize=(10, 12))
+
+    # # Plot initial data to set up the plot objects
+    left_line, = axs[0].plot([], [], 'o-', label='Left Line')
+    right_line, = axs[0].plot([], [], 'o-', label='Right Line')
+    ThreeP_curveL, = axs[1].plot([],[], label='Curvature Left')
+    ThreeP_curveR, = axs[1].plot([],[], label='Curvature Right')
+    Kappa_curveL, = axs[2].plot([],[], label='Curvature (kappa) Left')
+    Kappa_curveR, = axs[2].plot([], [],label='Curvature (kappa) Right')
+    
+     # Plot the coordinates
+    axs[0].set_xlabel('X Coordinate')
+    axs[0].set_ylabel('Y Coordinate')
+    axs[0].legend()
+    axs[0].grid(True)
+     # Set fixed axis limits based on initial data range (adjust according to your data range)
+    axs[0].set_xlim([-1, 20])  # Example limits, adjust according to your data range
+    axs[0].set_ylim([-10, 10])  # Example limits, adjust according to your data range
+    # axs[0].axis('equal')
+
+    # Plot the curvature using the circle through three points method
+    axs[1].set_title('Curvature using circle through three points method')
+    axs[1].set_xlabel('Index')
+    axs[1].set_ylabel('Curvature')
+    axs[1].legend()
+    axs[1].grid(True)
+    axs[1].set_ylim([-2, 2])
+    axs[1].set_xlim([0, 50])  # Example limits, adjust according to your data range
+
+    # Plot the curvature (kappa)
+    axs[2].set_title('Curvature (kappa) along the Path using calc_head_curv_num')
+    axs[2].set_xlabel('Point Index')
+    axs[2].set_ylabel('Curvature (1/m)')
+    axs[2].grid(True)
+    axs[2].legend()
+    axs[2].set_ylim([-2, 2])
+    axs[2].set_xlim([0, 50])  # Example limits, adjust according to your data range
+
+    plt.tight_layout()
+    fig.canvas.mpl_connect('key_press_event', close_event)
+
+    # Define the update function
+    def update(frame):
+        # Update data in plot objects
+        left_x, left_y = left_data[frame][:, 0], left_data[frame][:, 1]
+        right_x, right_y = right_data[frame][:, 0], right_data[frame][:, 1]
+        pathL = np.vstack((left_x, left_y)).T
+        pathR = np.vstack((right_x, right_y)).T
+        
+        # Calculate the curvature using cirlce through three points method
+        radiiR, centersR, curvatureR = FeatureExtraction.calculate_circle_radius_and_center(pathR)
+        radiiL, centersL, curvatureL = FeatureExtraction.calculate_circle_radius_and_center(pathL)
+
+        #Calculate the curvature using the calc_head_curv_num function
+        # Calculate element lengths (distances between consecutive points)
+        pathL = np.vstack((left_x, left_y)).T
+        pathR = np.vstack((right_x, right_y)).T
+        el_lengthsL = np.sqrt(np.sum(np.diff(pathL, axis=0)**2, axis=1))
+        el_lengthsR = np.sqrt(np.sum(np.diff(pathR, axis=0)**2, axis=1))
+
+        # Call the calc_head_curv_num function
+        psi, kappaL = calc_head_curv_num(
+            path=pathL,
+            el_lengths=el_lengthsL,
+            is_closed=False,
+            stepsize_psi_preview=0.1,
+            stepsize_psi_review=0.1,
+            stepsize_curv_preview=0.2,
+            stepsize_curv_review=0.2,
+            calc_curv=True
+        )
+        # Call the calc_head_curv_num function
+        psi, kappaR = calc_head_curv_num(
+            path=pathR,
+            el_lengths=el_lengthsR,
+            is_closed=False,
+            stepsize_psi_preview=0.1,
+            stepsize_psi_review=0.1,
+            stepsize_curv_preview=0.2,
+            stepsize_curv_review=0.2,
+            calc_curv=True
+        )
+        
+        left_line.set_data(left_x, left_y)
+        right_line.set_data(right_x, right_y)
+        ThreeP_curveL.set_data(np.arange(len(curvatureL)), curvatureL)
+        ThreeP_curveR.set_data(np.arange(len(curvatureR)),curvatureR)
+        Kappa_curveL.set_data(np.arange(len(kappaL)), kappaL)
+        Kappa_curveR.set_data(np.arange(len(kappaR)), kappaR)
+
+        # Update the title to indicate the current frame
+        axs[0].set_title(f'Left and Right Line Coordinates (Frame {frame})')
+
+    # Create the animation
+    ani = FuncAnimation(fig, update, frames=len(left_data), repeat=False, interval=200)
+
+    plt.tight_layout()
+    fig.canvas.mpl_connect('key_press_event', close_event)
+    plt.show()
+    
+   
 def plot_points_and_circles_together(n):
     right_line_data = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_" + str(n) + ".npy")
     radii, centers, curvature = FeatureExtraction.calculate_circle_radius_and_center(right_line_data)
@@ -519,11 +605,12 @@ def main():
     # PrintDataArray(n)
     # plot_lines_once(n)
     # plot_boundaries_animation()
-    # plot_lines_animation()
+    #plot_lines_animation()
+    plot_lines_and_curvature_animation()
     # plot_points_and_circles(right_line, radii, centers)
     # plot_curvature(curvature, right_line)
     # plot_points_and_circles_together(n)
-    plot_lines_and_curvature(n)
+    # plot_lines_and_curvature(n)
 
 if __name__ == '__main__':
      main()
