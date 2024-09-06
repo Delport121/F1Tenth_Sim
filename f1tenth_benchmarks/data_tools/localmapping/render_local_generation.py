@@ -62,10 +62,20 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
         scan_xs, scan_ys = map_data.pts2rc(scan_pts)
         plt.plot(scan_xs, scan_ys, '.', color=free_speech, alpha=0.5)
 
-        # plt.plot(0, 0, '*', markersize=12, color='red')
+        plt.plot(0, 0, '*', markersize=12, color='red') #Show map origin (Full map has to be rendered)
+        Start = map_data.map_origin
+        coords = Start[0], Start[1]
+        start_coord = reoreintate_pts(coords, position, orientation)
+        start_x, start_y = map_data.xy2rc(start_coord[0], start_coord[1])
+        # plt.plot(start_x, start_y, '*', markersize=12, color='pink') #Show map origin (Full map has to be rendered)
+        
+        
 
-
-        # plt.plot(local_track[:, 0], local_track[:, 1], '-X', color='orange', markersize=10)
+        local_pts = reoreintate_pts(local_track[:, :2], position, orientation)
+        print(local_pts)
+        local_xs, local_ys = map_data.pts2rc(local_pts)
+        plt.plot(local_xs, local_ys, '-X', color='orange', markersize=10) # Plot local track
+        
 
         boundary1 = reoreintate_pts(boundaries[:, :2], position, orientation)
         xs1, ys1 = map_data.pts2rc(boundary1)
@@ -77,10 +87,9 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
             xs = np.array([xs1[z], xs2[z]])
             ys = np.array([ys1[z], ys2[z]])
 
-            # xs = [boundaries[z, 0], boundaries[z, 2]]
-            # ys = [boundaries[z, 1], boundaries[z, 3]]
-            # plt.plot(xs, ys, '-o', color=sweedish_green, markersize=5)
-            
+            # xs = [boundaries[z, 0], boundaries[z, 2]]     #Uncommenting this does something odd with the plots
+            # ys = [boundaries[z, 1], boundaries[z, 3]]     #Uncommenting this does something odd with the plots
+            plt.plot(xs, ys, '-o', color=sweedish_green, markersize=5)
             # plt.plot(xs, ys, '-o', color='black', markersize=5)
         
         if len(boundary_extension) > 0:
@@ -91,10 +100,9 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
             for z in range(boundary_extension.shape[0]):
                 xs = np.array([xss1[z], xss2[z]])
                 ys = np.array([yss1[z], yss2[z]])
-                xs = [boundary_extension[z, 0], boundary_extension[z, 2]]
-                ys = [boundary_extension[z, 1], boundary_extension[z, 3]]
+                # xs = [boundary_extension[z, 0], boundary_extension[z, 2]] #Uncommenting this does something odd with the plots
+                # ys = [boundary_extension[z, 1], boundary_extension[z, 3]] #Uncommenting this does something odd with the plots
                 plt.plot(xs, ys, '-o', color=fresh_t, markersize=5)
-                
                 # plt.plot(xs, ys, '-o', color='pink', markersize=5)
         else:
             xss1, xss2 = [xs1[0]], [xs2[0]]
@@ -120,14 +128,14 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
         except:
             pass
 
-        # plt.axis('equal')
-        # plt.tight_layout()
-        #plt.axis('off')
+        plt.axis('equal')         # Uncomment to plot full map
+        plt.tight_layout()        
+        plt.axis('off')
         name = save_path + f"LocalMapGeneration_{i}"
         plt.savefig(name + ".svg", bbox_inches="tight")
         # plt.savefig(f"Data/LocalMapRacing/LocalMaps/LocalGeneration_{i}_aut.pdf", bbox_inches="tight", pad_inches=0.05)
-        # plt.show()
-        # break
+        plt.show()
+        break
 
 def reoreintate_pts(pts, position, theta):
     rotation_mtx = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
