@@ -72,7 +72,7 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
         
 
         local_pts = reoreintate_pts(local_track[:, :2], position, orientation)
-        print(local_pts)
+        # print(local_pts)
         local_xs, local_ys = map_data.pts2rc(local_pts)
         plt.plot(local_xs, local_ys, '-X', color='orange', markersize=10) # Plot local track
         
@@ -134,8 +134,8 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
         name = save_path + f"LocalMapGeneration_{i}"
         plt.savefig(name + ".svg", bbox_inches="tight")
         # plt.savefig(f"Data/LocalMapRacing/LocalMaps/LocalGeneration_{i}_aut.pdf", bbox_inches="tight", pad_inches=0.05)
-        plt.show()
-        break
+        # plt.show()
+        # break
 
 def reoreintate_pts(pts, position, theta):
     rotation_mtx = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
@@ -146,6 +146,7 @@ def reoreintate_pts(pts, position, theta):
 if __name__ == '__main__':
     # render_local_maps("LocalMapPP", "c1")
     render_local_maps("LocalMPCC", "mu60", "gbr")
+    # render_local_maps("LocalMPCC", "mu60", "esp")
     # render_local_maps("LocalMapPlanner", "r1", "mco")
 
 

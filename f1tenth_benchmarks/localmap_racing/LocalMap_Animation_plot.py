@@ -928,13 +928,18 @@ class FeatureExtraction:
         pass
     
     def calculate_circle_radius_and_center(points):
-        if len(points) < 3:
-            raise ValueError("At least three points are required to form a circle.")
+        # if len(points) < 3:
+        #     raise ValueError("At least three points are required to form a circle.")
         
         radii = []
         centers = []
         curvatures = []
-
+        
+        if len(points) < 3:
+            radii.append(1)
+            centers.append((0, 0))
+            curvatures.append(0)
+            return radii, centers, curvatures
         for i in range(len(points) - 2):
             x1, y1 = points[i]
             x2, y2 = points[i + 1]
@@ -1057,6 +1062,8 @@ def main():
     # n = 140
     n = 600
     # n = 40
+    n =267 # messed up centre line on aut
+    n =345 # messed up centre line on esp
     right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
     
     
@@ -1069,12 +1076,12 @@ def main():
     # PrintDataArray(n)
     # plot_lines_once(n)
     # plot_Polyfit(n)
-    # plot_lines_and_curvature(n)
+    plot_lines_and_curvature(n)
     # plot_Poly_and_curvature(n)
     # plot_boundaries_once(n)
     # plot_boundaries_animation()
     # plot_lines_animation()
-    plot_lines_animation_with_polyfit()
+    # plot_lines_animation_with_polyfit()
     # plot_lines_and_curvature_animation()
     # plot_Poly_and_curvature_animation()
     # plot_points_and_circles(right_line, radii, centers)
