@@ -18,7 +18,6 @@ def test_pure_pursuit_planning():
     # plot_raceline_tracking(planner.name, test_id)
 
 
-
 def test_full_stack_pure_pursuit():
     test_id = "full_stack_pp"
     map_name = "aut"

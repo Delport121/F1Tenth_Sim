@@ -11,7 +11,7 @@ TRACK_WIDTH = 1.8 # use fixed width
 FOV = 4.7
 BOUNDARY_SMOOTHING = 0.2
 MAX_TRACK_WIDTH = 2.5
-TRACK_SEPEARTION_DISTANCE = 0.4
+TRACK_SEPEARTION_DISTANCE = 0.2
 BOUNDARY_STEP_SIZE = 0.4
 # FILTER_THRESHOLD = 2.4
 
@@ -23,6 +23,7 @@ class LocalMapGenerator:
         self.save_data = save_data
         if save_data:
             self.local_map_data_path = path + f"LocalMapData_{test_id}/"
+            # print(self.local_map_data_path)
             ensure_path_exists(self.local_map_data_path)
         self.counter = 0
         self.left_longer = None

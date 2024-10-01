@@ -1,5 +1,8 @@
 from f1tenth_benchmarks.simulator import F1TenthSim_TrueLocation, F1TenthSim
 from f1tenth_benchmarks.classic_racing.particle_filter import ParticleFilter
+# from f1tenth_benchmarks.classic_racing.curvature_filter import CurvatureFilter
+# from f1tenth_benchmarks.classic_racing.curvature_filterV1 import CurvatureFilter
+from f1tenth_benchmarks.classic_racing.curvature_filterV2 import CurvatureFilter
 import torch
 import numpy as np
 
@@ -65,6 +68,10 @@ def test_full_stack_single_map(planner, map_name, test_id, extra_params={}, numb
     # pf = ParticleFilter(planner.name, test_id, {"dt": simulator.params.timestep * simulator.params.n_sim_steps})
     pf.set_map(map_name)
     simulate_localisation_laps(simulator, planner, pf, number_of_laps)
+    # cf = CurvatureFilter(planner.name, test_id, extra_pf_params)
+    # cf.set_map(map_name)
+    # simulate_localisation_laps(simulator, planner, cf, number_of_laps)
+    
 
 
 

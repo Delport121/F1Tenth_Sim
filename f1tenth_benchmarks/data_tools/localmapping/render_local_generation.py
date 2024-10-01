@@ -128,7 +128,7 @@ def render_local_maps(planner_name, test_id, map_name="aut"):
         except:
             pass
 
-        plt.axis('equal')         # Uncomment to plot full map
+        # plt.axis('equal')         # Uncomment to plot full map
         plt.tight_layout()        
         plt.axis('off')
         name = save_path + f"LocalMapGeneration_{i}"

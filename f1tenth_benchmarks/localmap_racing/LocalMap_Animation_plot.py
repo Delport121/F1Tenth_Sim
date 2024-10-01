@@ -445,7 +445,7 @@ def plot_boundaries_animation():
         ax.set_title(f'Left and Right Line Coordinates (Frame {frame})')
 
     # Create the animation
-    ani = FuncAnimation(fig, update, frames=len(Bound_data), repeat=False, interval=200)
+    ani = FuncAnimation(fig, update, frames=len(Bound_data), repeat=False, interval=50)
     plt.show()
 
 def plot_lines_animation():
@@ -1059,11 +1059,12 @@ def main():
     # n = 240
     # n = 415
     # n = 395 # Very noisy
-    # n = 140
-    n = 600
+    n = 140
+    # n = 600
     # n = 40
-    n =267 # messed up centre line on aut
-    n =345 # messed up centre line on esp
+    # n =267 # messed up centre line on aut
+    # n =345 # messed up centre line on esp
+    # n =68 # messed up centre line on gbr
     right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
     
     
@@ -1076,10 +1077,10 @@ def main():
     # PrintDataArray(n)
     # plot_lines_once(n)
     # plot_Polyfit(n)
-    plot_lines_and_curvature(n)
+    # plot_lines_and_curvature(n)
     # plot_Poly_and_curvature(n)
     # plot_boundaries_once(n)
-    # plot_boundaries_animation()
+    plot_boundaries_animation()
     # plot_lines_animation()
     # plot_lines_animation_with_polyfit()
     # plot_lines_and_curvature_animation()

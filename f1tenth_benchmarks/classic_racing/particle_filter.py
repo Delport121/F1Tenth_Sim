@@ -7,6 +7,7 @@ from scipy.ndimage import distance_transform_edt as edt
 import matplotlib.pyplot as plt
 
 from f1tenth_benchmarks.utils.BasePlanner import load_parameter_file_with_extras
+import time
 
 
 class ParticleFilter:
@@ -30,6 +31,7 @@ class ParticleFilter:
         self.particle_indices = np.arange(self.NP)
 
         self
+        self.Times = []
 
     def init_pose(self, init_pose):
         '''Randomly generate a bunch of particles'''
@@ -58,12 +60,16 @@ class ParticleFilter:
 
     def localise(self, action, observation):
         '''MCL algorithm'''
+        t0 = time.time()
         vehicle_speed = observation["vehicle_speed"] 
         self.particle_control_update(action, vehicle_speed)
-        self.measurement_update(observation["scan"][::24]) # Splice downsmaple particles
+        self.measurement_update(observation["scan"][::24]) # Selects every 24th element from the array (downsampling)
 
         estimate = np.dot(self.particles.T, self.weights)
         self.estimates.append(estimate)
+        
+        localise_step_time = time.time() - t0
+        self.Times.append(localise_step_time)
 
         # image = self.scan_simulator.map_img
         # image_np = np.array(image, dtype=int)
@@ -73,12 +79,12 @@ class ParticleFilter:
         # plt.imshow(occupancy_grid, cmap='gray', interpolation='nearest')
 
         
-        plt.xlim([-2, 10])
-        plt.ylim([-2, 10])
-        plt.plot(self.particles[:,0], self.particles[:,1], 'ro', markersize=0.2)
-        plt.plot(estimate[0], estimate[1], 'yo', markersize=2)
-        plt.title('Occupancy Grid')
-        plt.show()
+        # plt.xlim([-2, 10])
+        # plt.ylim([-2, 10])
+        # plt.plot(self.particles[:,0], self.particles[:,1], 'ro', markersize=0.2)
+        # plt.plot(estimate[0], estimate[1], 'yo', markersize=5)
+        # plt.title('Particle distribution')
+        # plt.show()
 
         return estimate
 
@@ -95,7 +101,7 @@ class ParticleFilter:
         for i, state in enumerate(self.particles): 
             particle_measurements[i] = self.scan_simulator.scan(state)
 
-        #Importance sampling 
+        # Importance sampling 
         z = particle_measurements - measurement
         sigma = np.clip(np.sqrt(np.average(z**2, axis=0)), 0.01, 10)
         weights =  np.exp(-z ** 2 / (2 * sigma ** 2))
@@ -111,6 +117,8 @@ class ParticleFilter:
     def lap_complete(self):
         estimates = np.array(self.estimates)
         np.save(self.data_path + f"pf_estimates_{self.map_name}_{self.lap_number}.npy", estimates)
+        times = np.array(self.Times)
+        np.save(self.data_path + f"pf_steptimes_{self.map_name}_{self.lap_number}.npy", times)
         self.lap_number += 1
 
 
