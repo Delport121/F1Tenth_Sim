@@ -120,45 +120,9 @@ class CurvatureFilter:
         # plt.plot(localTrack[:, 0], localTrack[:, 1], 'bo')
         # plt.show()
         
+        #Returns the normalised weights for each particle
         best_transformation, best_transformed_scan, costs, self.weights = self.scan_simulator.icp_scan_matching(global_track, localTrack, max_iterations=10, tolerance=1e-7, initial_guesses=self.particles)
         
-        # plt.plot(costs)
-        # plt.plot(self.weights)
-        # plt.show()
-        # print(len(self.weights))
-        # print(len(self.particles))
-        # print(sum(self.weights))
-        
-        # plt.plot(localTrack[:, 0], localTrack[:, 1], 'ro')
-        # plt.show()
-       
-        # # Simulate scans for each particle
-        # particle_measurements = np.zeros((self.NP, self.num_beams))
-        # for i, state in enumerate(self.particles): 
-        #     particle_measurements[i] = self.scan_simulator.scan(state)
-
-        # # # Importance sampling 
-        # # z = particle_measurements - measurement
-        # # sigma = np.clip(np.sqrt(np.average(z**2, axis=0)), 0.01, 10)
-        # # weights =  np.exp(-z ** 2 / (2 * sigma ** 2))
-        # # self.weights = np.prod(weights, axis=1)
-        # # # Normalize weights
-        # # self.weights = self.weights / np.sum(self.weights)
-        
-        # correlation_scores = np.correlate(np.flip(-self.Full_map_curvature), kappaLocal, mode='valid')
-        # # Shift the scores to ensure all are positive (if necessary)
-        # min_score = np.min(correlation_scores)
-        # shifted_scores = correlation_scores - min_score  # Now all scores are >= 0
-        # # Normalize the scores to a range between 0 and 1
-        # normalized_scores = shifted_scores / np.max(shifted_scores)
-        # # Convert to probabilities by dividing by the sum of the normalized scores
-        # probabilities = normalized_scores / np.sum(normalized_scores)
-        # self.weights = probabilities
-        
-        # print(f"Particle indices: {len(self.particle_indices)}")
-        # print(f"NP: {self.NP}")
-        # print(f"Self weights: {len(self.weights)}")
-
         # # Resampling
         proposal_indices = np.random.choice(self.particle_indices, self.NP, p=self.weights)
         self.proposal_distribution = self.particles[proposal_indices,:]
@@ -178,8 +142,6 @@ def particle_dynamics_update(states, actions, speed, dt, L):
     states[:, 1] += speed * np.sin(states[:, 2]) * dt
     states[:, 2] += speed * np.tan(actions[0]) / L * dt
     return states
-
-
 
 class SensorModel:
     def __init__(self, map_name, test_id,  num_beams, fov, eps=0.01, theta_dis=2000, max_range=30.0):
@@ -224,7 +186,6 @@ class SensorModel:
         self.load_map(map_name)
         self.FeatureExtractor = LocalMapGenerator(map_name, 0, False) #False to avoid saving data
         
-    
     def load_map(self, map_path):
         # load map image
        

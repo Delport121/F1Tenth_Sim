@@ -1057,9 +1057,9 @@ def main():
     # n = 400
     # n = 85
     # n = 240
-    # n = 415
+    n = 415
     # n = 395 # Very noisy
-    n = 140
+    # n = 140 #Nice example
     # n = 600
     # n = 40
     # n =267 # messed up centre line on aut
@@ -1077,10 +1077,10 @@ def main():
     # PrintDataArray(n)
     # plot_lines_once(n)
     # plot_Polyfit(n)
-    # plot_lines_and_curvature(n)
+    plot_lines_and_curvature(n)
     # plot_Poly_and_curvature(n)
     # plot_boundaries_once(n)
-    plot_boundaries_animation()
+    # plot_boundaries_animation()
     # plot_lines_animation()
     # plot_lines_animation_with_polyfit()
     # plot_lines_and_curvature_animation()
