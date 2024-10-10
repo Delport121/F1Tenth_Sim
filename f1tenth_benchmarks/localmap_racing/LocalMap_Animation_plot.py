@@ -13,6 +13,7 @@ from matplotlib.animation import FuncAnimation
 import matplotlib
 import math
 from scipy.optimize import curve_fit
+import trajectory_planning_helpers as tph
 from trajectory_planning_helpers.calc_head_curv_num import calc_head_curv_num
 matplotlib.use('TkAgg')  # or another suitable backend like 'Qt5Agg', 'Agg', etc.
 
@@ -185,6 +186,10 @@ def plot_lines_and_curvature(n):
         stepsize_curv_review=0.2,
         calc_curv=True
     )
+    
+    psiLocal, kappaLocal = tph.calc_head_curv_num.calc_head_curv_num(np.column_stack((local_track[:,1],local_track[:,0])), el_lengthsLocal, False)
+    psiLocal = -psiLocal #Issue for some reason the psi values are negative
+    
     psiL, kappaL = calc_head_curv_num(
         path=pathL,
         el_lengths=el_lengthsL,
@@ -230,15 +235,15 @@ def plot_lines_and_curvature(n):
     # axs[1].legend()
     
     # Plot the curvature using the circle through three points method
-    axs[1].plot(curvatureL, label='Left line Curvature')
-    axs[1].plot(curvatureR, label='Right line Curvature')
-    axs[1].plot(curvatureLocal, label='Local line Curvature')
-    axs[1].set_title('Curvature using circle through three points method')
+    axs[1].plot(psiL, label='Left line kappa')
+    axs[1].plot(psiR, label='Right line kappa')
+    axs[1].plot(psiLocal, label='Local line kappa')
+    axs[1].set_title('Heading (psi) along the Path using calc_head_curv_num')
     axs[1].set_xlabel('Index')
-    axs[1].set_ylabel('Curvature')
+    axs[1].set_ylabel('Heading')
     axs[1].legend()
     axs[1].grid(True)
-    axs[1].set_ylim([-2, 2])
+    # axs[1].set_ylim([-2, 2])
 
     # Plot the curvature (kappa)
     axs[2].plot(np.arange(len(kappaL)), kappaL, label='Curvature (kappa) left')
@@ -1057,7 +1062,7 @@ def main():
     # n = 400
     # n = 85
     # n = 240
-    n = 415
+    # n = 415 # Good example
     # n = 395 # Very noisy
     # n = 140 #Nice example
     # n = 600
@@ -1065,6 +1070,7 @@ def main():
     # n =267 # messed up centre line on aut
     # n =345 # messed up centre line on esp
     # n =68 # messed up centre line on gbr
+    n = 13
     right_line = np.load("Logs/LocalMPCC/RawData_mu60/LocalMapData_mu60/line1_"+ str(n) +".npy")
     
     

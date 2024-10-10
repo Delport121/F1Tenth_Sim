@@ -73,7 +73,7 @@ def get_local_maps(planner_name, test_id, map_name="aut", i = 0):
     correct_scanx, correct_scany = map_data.pts2rc(Corrected_scan_pts)
     
     plt.plot(scan_xs, scan_ys, '.', color=free_speech, alpha=0.5, label='Raw Scan Points')
-    plt.plot(correct_scanx, correct_scany, '.', color=sunset_orange, alpha=0.5, label='Corrected Scan Points')
+    plt.plot(correct_scanx, correct_scany, '.', color=sunset_orange, alpha=0.5, label='Ideal corrected Sca-to-Map Match')
     map_data.plot_map_img_light()
     plt.legend()
     plt.show()
@@ -129,8 +129,8 @@ def icp_scan_matching(global_map, local_scan, max_iterations=100, tolerance=1e-7
     for p in range(num_initial_guesses):
         # Generate random initial guess for [theta, tx, ty]
         initial_guess = np.array([np.random.uniform(0, 2 * np.pi),   # Random rotation
-                                  np.random.uniform(-20, 1200),         # Random translation (x)
-                                  np.random.uniform(-20, 600)])        # Random translation (y)
+                                  np.random.uniform(0, 1200),         # Random translation (x)
+                                  np.random.uniform(0, 600)])        # Random translation (y)
         
         plt.scatter(local_scan[:, 0], local_scan[:, 1], c='red', label='Local Scan', alpha=0.5, s=0.5)
         initial_guess_transformed = transform_points(local_scan, initial_guess)
